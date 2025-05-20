@@ -1,5 +1,62 @@
+#load libraries
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+library(zoo)
+
+
+# load data
+data <- read.delim("CACONDE.txt", header = FALSE, sep="\n")
+
+colnames(data) <- c("value")
+start_date <- as.Date("2015-01-01")
+data$date <- seq.Date(from = start_date, by = "month", length.out = nrow(data))
+
 # 1. Use visual exploration tools to understand the dataset. Investigate aspects
 # such as time dependence, seasonality, trends, and data behavior.
+summary(data)
+
+# time series plot
+ggplot(data, aes(x = date, y = value)) +
+  geom_line(color = "blue") +
+  labs(title = "Time Series Plot", x = "Date", y = "Useful water %") +
+  theme_minimal()
+
+
+# seasonality
+data$month <- month(data$date, label = TRUE)
+data$year <- year(data$date)
+
+# monthly average
+monthly_avg <- data %>%
+  group_by(month) %>%
+  summarise(avg_value = mean(value, na.rm = TRUE))
+
+ggplot(monthly_avg, aes(x = month, y = avg_value)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Seasonality - Monthly Average", x = "Month", y = "Avg useful water %") +
+  theme_minimal()
+
+
+# trend?
+
+# using moving average:
+# data <- data %>%
+#   arrange(date) %>%
+#   mutate(rolling_avg = rollmean(value, k = 12, fill = NA))
+# 
+# ggplot(data, aes(x = date)) +
+#   geom_line(aes(y = value), alpha = 0.4) +
+#   geom_line(aes(y = rolling_avg), color = "darkgreen") +
+#   labs(title = "12-Period Rolling Average", y = "Value") +
+#   theme_minimal()
+
+# using loess, locally estimated scatterplot smoothing
+ggplot(data, aes(x = date, y = value)) +
+  geom_line(alpha = 0.4) +
+  geom_smooth(method = "loess", span = 0.2, color = "darkred") +
+  labs(title = "Trend Analysis with LOESS", x = "Date", y = "Useful water %") +
+  theme_minimal()
 
 
 # 2. Test the series for stationarity.

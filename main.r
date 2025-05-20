@@ -60,7 +60,11 @@ ggplot(data, aes(x = date, y = value)) +
 
 
 # 2. Test the series for stationarity.
+# mean
 
+# variance
+
+# covariance / autocovariance
 
 # 3. Split the dataset into training and validation sets by reserving the last 6
 # observations for forecasting evaluation.

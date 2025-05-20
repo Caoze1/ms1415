@@ -2,7 +2,6 @@
 library(ggplot2)
 library(lubridate)
 library(tidyverse)
-library(zoo)
 
 
 # load data
@@ -23,7 +22,7 @@ ggplot(data, aes(x = date, y = value)) +
   theme_minimal()
 
 
-# seasonality
+# seasonality?
 data$month <- month(data$date, label = TRUE)
 data$year <- year(data$date)
 
@@ -39,19 +38,6 @@ ggplot(monthly_avg, aes(x = month, y = avg_value)) +
 
 
 # trend?
-
-# using moving average:
-# data <- data %>%
-#   arrange(date) %>%
-#   mutate(rolling_avg = rollmean(value, k = 12, fill = NA))
-# 
-# ggplot(data, aes(x = date)) +
-#   geom_line(aes(y = value), alpha = 0.4) +
-#   geom_line(aes(y = rolling_avg), color = "darkgreen") +
-#   labs(title = "12-Period Rolling Average", y = "Value") +
-#   theme_minimal()
-
-# using loess, locally estimated scatterplot smoothing
 ggplot(data, aes(x = date, y = value)) +
   geom_line(alpha = 0.4) +
   geom_smooth(method = "loess", span = 0.2, color = "darkred") +

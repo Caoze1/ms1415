@@ -46,15 +46,27 @@ ggplot(data, aes(x = date, y = value)) +
 
 
 # 2. Test the series for stationarity.
+n <- nrow(data)
+part1 <- data$value[1:(n/3)]
+part2 <- data$value[(n/3 + 1):n]
+part3 <- data$value[(n/3 + 2):n]
+
 # mean
+mean(part1); mean(part2); mean(part3)
 
 # variance
+var(part1); var(part2); var(part3)
 
-# covariance / autocovariance
+# autocorrelation
+acf(data$value, main = "Autocorrelation")
+
 
 # 3. Split the dataset into training and validation sets by reserving the last 6
 # observations for forecasting evaluation.
+ts_data <- ts(data$value, start = c(2015,1), frequency = 12)
 
+train <- window(ts_data, end = c(2023, 8))
+test <- window(ts_data, start = c(2023, 9))
 
 # 4. Estimate an Autoregressive (AR) model using the dynamic regression ap-
 # proach discussed in class. Select the appropriate number of covariates

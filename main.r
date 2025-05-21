@@ -112,7 +112,11 @@ plot(arma_forecast)
 
 
 # 6. Estimate a SARMA model.
+sarma_model <- Arima(train, order = c(2,0,2),
+                     seasonal = list(order = c(0,0,1), period = 12))
 
+sarma_forecast <- forecast(sarma_model, h = 6)
+plot(sarma_forecast)
 
 # 7. Compare the three models. Which model is the most suitable for this
 # dataset? Keep in mind that a model can only be used for prediction if

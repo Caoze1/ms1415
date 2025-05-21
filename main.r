@@ -68,7 +68,7 @@ var(part1); var(part2); var(part3)
 
 # autocorrelation
 acf(data$value, main = "Autocorrelation")
-# suggests non-stationary, could be due to strong seasonality
+# may suggest non-stationary, could be due to strong seasonality
 
 # Augmented Dickey-Fuller test
 adf.test(data$value)
@@ -113,7 +113,7 @@ plot(arma_forecast)
 
 # 6. Estimate a SARMA model.
 sarma_model <- Arima(train, order = c(2,0,2),
-                     seasonal = list(order = c(0,0,1), period = 12))
+                     seasonal = list(order = c(1,0,1), period = 12)) # try 2,0,2 order?
 
 sarma_forecast <- forecast(sarma_model, h = 6)
 plot(sarma_forecast)
@@ -123,6 +123,57 @@ plot(sarma_forecast)
 # it has been properly validated. To compare the forecasting performance,
 # evaluate both in-sample and out-of-sample predictions using visual tools
 # and performance metrics.
+
+# Compare AIC and BIC
+model_comparison <- data.frame(
+  Model = c("AR", "ARMA", "SARMA"),
+  AIC = c(AIC(ar_model), AIC(arma_model), AIC(sarma_model)),
+  BIC = c(BIC(ar_model), BIC(arma_model), BIC(sarma_model))
+)
+
+print(model_comparison) # AR has lowest BIC, SARMA has lowest AIC
+
+
+# Function to calculate MAPE (Mean Absolute Percentage Error)
+mape <- function(actual, predicted) {
+  mean(abs((actual - predicted) / actual)) * 100
+}
+
+# Compute errors for each model
+
+results <- data.frame(
+  Model = c("AR", "ARMA", "SARMA"),
+  
+  # In-sample (train) errors
+  MSE_Train = c(
+    mean((fitted(ar_model) - train)^2),
+    mean((fitted(arma_model) - train)^2),
+    mean((fitted(sarma_model) - train)^2)
+  ),
+  MAPE_Train = c(
+    mape(train, fitted(ar_model)),
+    mape(train, fitted(arma_model)),
+    mape(train, fitted(sarma_model))
+  ),
+  
+  # Out-of-sample (test) errors
+  MSE_Test = c(
+    mean((ar_forecast$mean - test)^2),
+    mean((arma_forecast$mean - test)^2),
+    mean((sarma_forecast$mean - test)^2)
+  ),
+  MAPE_Test = c(
+    mape(test, ar_forecast$mean),
+    mape(test, arma_forecast$mean),
+    mape(test, sarma_forecast$mean)
+  )
+)
+
+# Round only numeric columns
+results[,2:5] <- round(results[,2:5], 2)
+
+# Now print
+print(results)
 
 
 # 8. Are there any other models that could be applied?

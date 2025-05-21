@@ -80,7 +80,6 @@ adf.test(data$value)
 
 # 3. Split the dataset into training and validation sets by reserving the last 6
 # observations for forecasting evaluation.
-
 train <- window(ts_data, end = c(2023, 8))
 test <- window(ts_data, start = c(2023, 9))
 
@@ -89,9 +88,27 @@ test <- window(ts_data, start = c(2023, 9))
 # based on the data time dependence.
 pacf(data$value, main = "Partial Autocorrelation") # suggests AR(1) or AR(2) will be good
 
+ar_model <- Arima(train, order = c(2,0,0))
+
+ar_forecast <- forecast(ar_model, h = 6)
+plot(ar_forecast)
+
 
 # 5. Estimate an ARMA model including seasonal components (e.g., sine and/or
 # cosine terms) to account for seasonality.
+
+# Create cos regressor matrix
+cos_t <- cos(2 * pi * (1:length(data$value))/12)
+xreg_train <- matrix(cos_t[1:length(train)], ncol = 1)
+xreg_test  <- matrix(cos_t[(length(train) + 1):length(data$value)], ncol = 1)
+
+# Fit ARMA with cosine regressor
+arma_model <- Arima(train, order = c(2,0,2), xreg = xreg_train)
+summary(ar_model)  # check if the regressor was included
+
+# Forecast using new regressor values
+arma_forecast <- forecast(arma_model, h = 6, xreg = xreg_test)
+plot(arma_forecast)
 
 
 # 6. Estimate a SARMA model.

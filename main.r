@@ -11,6 +11,8 @@ colnames(data) <- c("value")
 start_date <- as.Date("2015-01-01")
 data$date <- seq.Date(from = start_date, by = "month", length.out = nrow(data))
 
+ts_data <- ts(data$value, start = c(2015,1), frequency = 12)
+
 # 1. Use visual exploration tools to understand the dataset. Investigate aspects
 # such as time dependence, seasonality, trends, and data behavior.
 summary(data)
@@ -25,6 +27,9 @@ ggplot(data, aes(x = date, y = value)) +
 # seasonality?
 data$month <- month(data$date, label = TRUE)
 data$year <- year(data$date)
+
+spectrum(ts_data, main = "Periodogram of Seasonal Series", col = "purple", log = "no")
+
 
 # monthly average
 monthly_avg <- data %>%
@@ -59,11 +64,11 @@ var(part1); var(part2); var(part3)
 
 # autocorrelation
 acf(data$value, main = "Autocorrelation")
+pacf(train, main = "Partial Autocorrelation")
 
 
 # 3. Split the dataset into training and validation sets by reserving the last 6
 # observations for forecasting evaluation.
-ts_data <- ts(data$value, start = c(2015,1), frequency = 12)
 
 train <- window(ts_data, end = c(2023, 8))
 test <- window(ts_data, start = c(2023, 9))

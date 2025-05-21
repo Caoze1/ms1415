@@ -2,6 +2,7 @@
 library(ggplot2)
 library(lubridate)
 library(tidyverse)
+library(tseries)
 
 
 # load data
@@ -28,10 +29,11 @@ ggplot(data, aes(x = date, y = value)) +
 data$month <- month(data$date, label = TRUE)
 data$year <- year(data$date)
 
-spectrum(ts_data, main = "Periodogram of Seasonal Series", col = "purple", log = "no")
+spectrum(ts_data, main = "Periodogram of Series", col = "purple", log = "no")
+# spectogram indicates strong long-term seasonality (yearly)
+# but no short-term seasonality (month to month)
 
-
-# monthly average
+# monthly average visually
 monthly_avg <- data %>%
   group_by(month) %>%
   summarise(avg_value = mean(value, na.rm = TRUE))
@@ -58,13 +60,22 @@ part3 <- data$value[(n/3 + 2):n]
 
 # mean
 mean(part1); mean(part2); mean(part3)
+# suggests stationary
 
 # variance
 var(part1); var(part2); var(part3)
+# suggests stationary
 
 # autocorrelation
 acf(data$value, main = "Autocorrelation")
-pacf(train, main = "Partial Autocorrelation")
+# suggests non-stationary, could be due to strong seasonality
+
+# Augmented Dickey-Fuller test
+adf.test(data$value)
+# strongly suggests stationary
+# p < 0.05 => reject null hypothesis (non-stationary)
+# data is stationary at the 5% significance level
+# series is statistically stationary
 
 
 # 3. Split the dataset into training and validation sets by reserving the last 6
@@ -76,6 +87,7 @@ test <- window(ts_data, start = c(2023, 9))
 # 4. Estimate an Autoregressive (AR) model using the dynamic regression ap-
 # proach discussed in class. Select the appropriate number of covariates
 # based on the data time dependence.
+pacf(data$value, main = "Partial Autocorrelation") # suggests AR(1) or AR(2) will be good
 
 
 # 5. Estimate an ARMA model including seasonal components (e.g., sine and/or

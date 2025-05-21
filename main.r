@@ -3,6 +3,7 @@ library(ggplot2)
 library(lubridate)
 library(tidyverse)
 library(tseries)
+library(gridExtra)
 
 
 # load data
@@ -143,7 +144,7 @@ mape <- function(actual, predicted) {
 
 results <- data.frame(
   Model = c("AR", "ARMA", "SARMA"),
-  
+
   # In-sample (train) errors
   MSE_Train = c(
     mean((fitted(ar_model) - train)^2),
@@ -155,7 +156,7 @@ results <- data.frame(
     mape(train, fitted(arma_model)),
     mape(train, fitted(sarma_model))
   ),
-  
+
   # Out-of-sample (test) errors
   MSE_Test = c(
     mean((ar_forecast$mean - test)^2),
@@ -174,6 +175,25 @@ results[,2:5] <- round(results[,2:5], 2)
 
 # Now print
 print(results)
+
+
+# Residual Analysis
+par(mfrow=c(2,3))  # Arrange plots in 2 rows and 3 columns
+plot(ar_model$residuals, main="AR Residuals", ylab="Residuals")
+plot(arma_model$residuals, main="ARMA Residuals", ylab="Residuals")
+plot(sarma_model$residuals, main="SARMA Residuals", ylab="Residuals")
+
+acf(ar_model$residuals, main="AR ACF of Residuals")
+acf(arma_model$residuals, main="ARMA ACF of Residuals")
+acf(sarma_model$residuals, main="SARMA ACF of Residuals")
+
+
+# Plot Forecasts
+p1 <- autoplot(ar_forecast, main="AR Forecast")
+p2 <- autoplot(arma_forecast, main="ARMA Forecast")
+p3 <- autoplot(sarma_forecast, main="SARMA Forecast")
+
+grid.arrange(p1, p2, p3, ncol=1)
 
 
 # 8. Are there any other models that could be applied?

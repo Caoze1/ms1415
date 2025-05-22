@@ -52,8 +52,6 @@ ggplot(data, aes(x = date, y = value)) +
   labs(title = "Trend Analysis with LOESS", x = "Date", y = "Useful water %") +
   theme_minimal()
 
-acf(data$value)
-
 # 2. Test the series for stationarity.
 n <- nrow(data)
 part1 <- data$value[1:(n/3)]

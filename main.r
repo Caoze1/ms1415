@@ -67,7 +67,7 @@ var(part1); var(part2); var(part3)
 # suggests stationary
 
 # autocorrelation
-acf(data$value, main = "Autocorrelation")
+acf(data$value, main = "Autocorrelation") # suggests MA(3) or MA(4)
 # may suggest non-stationary, could be due to strong seasonality
 
 # Augmented Dickey-Fuller test
@@ -102,8 +102,9 @@ cos_t <- cos(2 * pi * (1:length(data$value))/12)
 xreg_train <- matrix(cos_t[1:length(train)], ncol = 1)
 xreg_test  <- matrix(cos_t[(length(train) + 1):length(data$value)], ncol = 1)
 
+
 # Fit ARMA with cosine regressor
-arma_model <- Arima(train, order = c(2,0,2), xreg = xreg_train)
+arma_model <- Arima(train, order = c(2,0,3), xreg = xreg_train)
 summary(ar_model)  # check if the regressor was included
 
 # Forecast using new regressor values
@@ -112,7 +113,8 @@ plot(arma_forecast)
 
 
 # 6. Estimate a SARMA model.
-sarma_model <- Arima(train, order = c(2,0,2),
+# maybe select the order automatically using auto.arima?
+sarma_model <- Arima(train, order = c(2,0,3),
                      seasonal = list(order = c(1,0,1), period = 12)) # try 2,0,2 order?
 
 sarma_forecast <- forecast(sarma_model, h = 6)

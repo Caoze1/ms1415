@@ -2,8 +2,8 @@
 library(ggplot2)
 library(lubridate)
 library(tidyverse)
-library(tseries)
 library(gridExtra)
+library(forecast)
 
 
 # load data
@@ -30,10 +30,6 @@ ggplot(data, aes(x = date, y = value)) +
 data$month <- month(data$date, label = TRUE)
 data$year <- year(data$date)
 
-spectrum(ts_data, main = "Periodogram of Series", col = "purple", log = "no")
-# spectogram indicates strong long-term seasonality (yearly)
-# but no short-term seasonality (month to month)
-
 # monthly average visually
 monthly_avg <- data %>%
   group_by(month) %>%
@@ -42,14 +38,6 @@ monthly_avg <- data %>%
 ggplot(monthly_avg, aes(x = month, y = avg_value)) +
   geom_bar(stat = "identity", fill = "steelblue") +
   labs(title = "Seasonality - Monthly Average", x = "Month", y = "Avg useful water %") +
-  theme_minimal()
-
-
-# trend?
-ggplot(data, aes(x = date, y = value)) +
-  geom_line(alpha = 0.4) +
-  geom_smooth(method = "loess", span = 0.2, color = "darkred") +
-  labs(title = "Trend Analysis with LOESS", x = "Date", y = "Useful water %") +
   theme_minimal()
 
 # 2. Test the series for stationarity.
@@ -68,7 +56,7 @@ var(part1); var(part2); var(part3)
 
 # autocorrelation
 acf(data$value, main = "Autocorrelation") # suggests MA(3) or MA(4)
-# may suggest non-stationary, could be due to strong seasonality
+# may suggest non-stationary, could be due to seasonality
 
 # Augmented Dickey-Fuller test
 adf.test(data$value)
@@ -105,7 +93,6 @@ xreg_test  <- matrix(cos_t[(length(train) + 1):length(data$value)], ncol = 1)
 
 # Fit ARMA with cosine regressor
 arma_model <- Arima(train, order = c(2,0,3), xreg = xreg_train)
-summary(ar_model)  # check if the regressor was included
 
 # Forecast using new regressor values
 arma_forecast <- forecast(arma_model, h = 6, xreg = xreg_test)
@@ -113,9 +100,8 @@ plot(arma_forecast)
 
 
 # 6. Estimate a SARMA model.
-# maybe select the order automatically using auto.arima?
 sarma_model <- Arima(train, order = c(2,0,3),
-                     seasonal = list(order = c(1,0,1), period = 12)) # try 2,0,2 order?
+                     seasonal = list(order = c(1,0,1), period = 12))
 
 sarma_forecast <- forecast(sarma_model, h = 6)
 plot(sarma_forecast)
@@ -140,7 +126,7 @@ print(model_comparison) # AR has lowest BIC, SARMA has lowest AIC
 mape <- function(actual, predicted) {
   mean(abs((actual - predicted) / actual)) * 100
 }
-
+print(length(train))
 # Compute errors for each model
 
 results <- data.frame(
@@ -172,22 +158,10 @@ results <- data.frame(
 )
 
 # Round only numeric columns
-results[,2:5] <- round(results[,2:5], 2)
+results[,2:5] <- round(results[,2:5], 6)
 
 # Now print
 print(results)
-
-
-# Residual Analysis
-par(mfrow=c(2,3))  # Arrange plots in 2 rows and 3 columns
-plot(ar_model$residuals, main="AR Residuals", ylab="Residuals")
-plot(arma_model$residuals, main="ARMA Residuals", ylab="Residuals")
-plot(sarma_model$residuals, main="SARMA Residuals", ylab="Residuals")
-
-acf(ar_model$residuals, main="AR ACF of Residuals")
-acf(arma_model$residuals, main="ARMA ACF of Residuals")
-acf(sarma_model$residuals, main="SARMA ACF of Residuals")
-
 
 # Plot Forecasts
 p1 <- autoplot(ar_forecast, main="AR Forecast")

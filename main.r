@@ -56,7 +56,6 @@ var(part1); var(part2); var(part3)
 
 # autocorrelation
 acf(data$value, main = "Autocorrelation") # suggests MA(3) or MA(4)
-# may suggest non-stationary, could be due to seasonality
 
 # Augmented Dickey-Fuller test
 adf.test(data$value)
@@ -172,3 +171,4 @@ grid.arrange(p1, p2, p3, ncol=1)
 
 
 # 8. Are there any other models that could be applied?
+# holt-winters?

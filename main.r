@@ -4,6 +4,7 @@ library(lubridate)
 library(tidyverse)
 library(gridExtra)
 library(forecast)
+library(tseries)
 
 
 # load data
@@ -172,3 +173,25 @@ grid.arrange(p1, p2, p3, ncol=1)
 
 # 8. Are there any other models that could be applied?
 # holt-winters?
+
+# Residuals
+res_ar <- residuals(ar_model)
+res_arma <- residuals(arma_model)
+res_sarma <- residuals(sarma_model)
+
+plot(res_ar, type = "p", 
+     main = "Residuals from AR Model", 
+     ylab = "Residuals", xlab = "Time")
+abline(h = 0, lty = 2)
+
+plot(res_arma, type = "p", 
+     main = "Residuals from ARMA Model", 
+     ylab = "Residuals", xlab = "Time")
+abline(h = 0, lty = 2)
+
+plot(res_sarma, type = "p", 
+     main = "Residuals from SARMA Model", 
+     ylab = "Residuals", xlab = "Time")
+abline(h = 0, lty = 2)
+
+adf.test(res_ar)

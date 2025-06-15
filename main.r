@@ -195,3 +195,17 @@ plot(res_sarma, type = "p",
 abline(h = 0, lty = 2)
 
 adf.test(res_ar)
+adf.test(res_arma)
+adf.test(res_sarma)
+
+acf(res_ar)
+acf(res_arma)
+acf(res_sarma)
+
+mean(res_ar)
+mean(res_arma)
+mean(res_sarma)
+
+shapiro.test(res_ar)
+shapiro.test(res_arma)
+shapiro.test(res_sarma)

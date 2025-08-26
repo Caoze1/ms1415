@@ -43,10 +43,9 @@ ggplot(monthly_avg, aes(x = month, y = avg_value)) +
 
 # 2. Test the series for stationarity.
 n <- nrow(data)
-cut <- floor(n/3)
-part1 <- data$value[1:cut]
-part2 <- data$value[(cut+1):(2*cut)]
-part3 <- data$value[(2*cut+1):n]
+part1 <- data$value[1:(n/3)]
+part2 <- data$value[(n/3 + 1):(n/3 + 2)]
+part3 <- data$value[(n/3 + 2):n]
 
 # mean
 mean(part1); mean(part2); mean(part3)

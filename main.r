@@ -77,7 +77,7 @@ test <- window(ts_data, start = c(2023, 9))
 # based on the data time dependence.
 pacf(data$value, main = "Partial Autocorrelation") # suggests AR(1) or AR(2) will be good
 
-ar_model <- Arima(train, order = c(2,0,0), lambda = lambda)
+ar_model <- Arima(train, order = c(1,0,0), lambda = lambda)
 
 ar_forecast <- forecast(ar_model, h = 6)
 plot(ar_forecast)
@@ -93,7 +93,7 @@ xreg_test  <- matrix(cos_t[(length(train) + 1):length(data$value)], ncol = 1)
 
 
 # Fit ARMA with cosine regressor
-arma_model <- Arima(train, order = c(2,0,3), xreg = xreg_train, lambda=lambda)
+arma_model <- Arima(train, order = c(1,0,2), xreg = xreg_train, lambda=lambda)
 
 # Forecast using new regressor values
 arma_forecast <- forecast(arma_model, h = 6, xreg = xreg_test)
@@ -101,8 +101,8 @@ plot(arma_forecast)
 
 
 # 6. Estimate a SARMA model.
-sarma_model <- Arima(train, order = c(2,0,3),
-                     seasonal = list(order = c(1,0,1), period = 12), lambda = lambda)
+sarma_model <- Arima(train, order = c(1,0,2),
+                     seasonal = list(order = c(1,0,0), period = 12), lambda = lambda)
 
 sarma_forecast <- forecast(sarma_model, h = 6)
 plot(sarma_forecast)
@@ -212,17 +212,11 @@ shapiro.test(res_ar)
 shapiro.test(res_arma)
 shapiro.test(res_sarma)
 
+arma_model <- Arima(train, order = c(1,0,2), lambda=lambda, xreg = xreg_train)
 
-
-arma_model <- Arima(train, order = c(2,0,3), xreg = xreg_train, lambda=lambda)
-sarma_model <- Arima(train, order = c(2,0,3),
-                     seasonal = list(order = c(1,0,1), period = 12), lambda = lambda)
 res_arma <- residuals(arma_model)
-res_sarma <- residuals(sarma_model)
 
 shapiro.test(res_arma)
-shapiro.test(res_sarma)
-
 
 
 library(forecast)
@@ -269,7 +263,7 @@ for (p in p_vals) {
     }, silent = TRUE)
   }
 }
-
+# 102 100 is best
 # Loop over SARMA (seasonal) models
 for (p in p_vals) {
   for (q in q_vals) {

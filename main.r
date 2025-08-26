@@ -69,6 +69,7 @@ adf.test(data$value)
 # 3. Split the dataset into training and validation sets by reserving the last 6
 # observations for forecasting evaluation.
 train <- window(ts_data, end = c(2023, 8))
+lambda <- BoxCox.lambda(train)
 test <- window(ts_data, start = c(2023, 9))
 
 # 4. Estimate an Autoregressive (AR) model using the dynamic regression ap-
@@ -76,7 +77,7 @@ test <- window(ts_data, start = c(2023, 9))
 # based on the data time dependence.
 pacf(data$value, main = "Partial Autocorrelation") # suggests AR(1) or AR(2) will be good
 
-ar_model <- Arima(train, order = c(2,0,0))
+ar_model <- Arima(train, order = c(2,0,0), lambda = lambda)
 
 ar_forecast <- forecast(ar_model, h = 6)
 plot(ar_forecast)
@@ -92,7 +93,7 @@ xreg_test  <- matrix(cos_t[(length(train) + 1):length(data$value)], ncol = 1)
 
 
 # Fit ARMA with cosine regressor
-arma_model <- Arima(train, order = c(2,0,3), xreg = xreg_train)
+arma_model <- Arima(train, order = c(2,0,3), xreg = xreg_train, lambda=lambda)
 
 # Forecast using new regressor values
 arma_forecast <- forecast(arma_model, h = 6, xreg = xreg_test)
@@ -101,7 +102,7 @@ plot(arma_forecast)
 
 # 6. Estimate a SARMA model.
 sarma_model <- Arima(train, order = c(2,0,3),
-                     seasonal = list(order = c(1,0,1), period = 12))
+                     seasonal = list(order = c(1,0,1), period = 12), lambda = lambda)
 
 sarma_forecast <- forecast(sarma_model, h = 6)
 plot(sarma_forecast)
@@ -179,6 +180,7 @@ res_ar <- residuals(ar_model)
 res_arma <- residuals(arma_model)
 res_sarma <- residuals(sarma_model)
 
+
 plot(res_ar, type = "p", 
      main = "Residuals from AR Model", 
      ylab = "Residuals", xlab = "Time")
@@ -209,3 +211,90 @@ mean(res_sarma)
 shapiro.test(res_ar)
 shapiro.test(res_arma)
 shapiro.test(res_sarma)
+
+
+
+arma_model <- Arima(train, order = c(2,0,3), xreg = xreg_train, lambda=lambda)
+sarma_model <- Arima(train, order = c(2,0,3),
+                     seasonal = list(order = c(1,0,1), period = 12), lambda = lambda)
+res_arma <- residuals(arma_model)
+res_sarma <- residuals(sarma_model)
+
+shapiro.test(res_arma)
+shapiro.test(res_sarma)
+
+
+
+library(forecast)
+
+# Initialize vectors of orders to test
+p_vals <- 0:3
+d <- 0
+q_vals <- 0:3
+
+P_vals <- 0:1
+D <- 0
+Q_vals <- 0:1
+seasonal_period <- 12
+
+# Prepare result storage
+results <- data.frame(
+  model_type = character(),
+  p = integer(),
+  d = integer(),
+  q = integer(),
+  P = integer(),
+  D = integer(),
+  Q = integer(),
+  W_statistic = numeric(),
+  p_value = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop over ARMA (non-seasonal) models
+for (p in p_vals) {
+  for (q in q_vals) {
+    try({
+      model <- Arima(train, order = c(p, d, q), lambda = lambda)
+      res <- residuals(model)
+      shapiro <- shapiro.test(res)
+      
+      results <- rbind(results, data.frame(
+        model_type = "ARMA",
+        p = p, d = d, q = q,
+        P = NA, D = NA, Q = NA,
+        W_statistic = shapiro$statistic,
+        p_value = shapiro$p.value
+      ))
+    }, silent = TRUE)
+  }
+}
+
+# Loop over SARMA (seasonal) models
+for (p in p_vals) {
+  for (q in q_vals) {
+    for (P in P_vals) {
+      for (Q in Q_vals) {
+        try({
+          model <- Arima(train, order = c(p, d, q),
+                         seasonal = list(order = c(P, D, Q), period = seasonal_period),
+                         xreg = xreg_train, lambda = lambda)
+          res <- residuals(model)
+          shapiro <- shapiro.test(res)
+          
+          results <- rbind(results, data.frame(
+            model_type = "SARMA",
+            p = p, d = d, q = q,
+            P = P, D = D, Q = Q,
+            W_statistic = shapiro$statistic,
+            p_value = shapiro$p.value
+          ))
+        }, silent = TRUE)
+      }
+    }
+  }
+}
+
+# Sort results by highest p-value (most normal residuals)
+results <- results[order(-results$p_value), ]
+print(results)

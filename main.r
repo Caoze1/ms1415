@@ -43,9 +43,10 @@ ggplot(monthly_avg, aes(x = month, y = avg_value)) +
 
 # 2. Test the series for stationarity.
 n <- nrow(data)
-part1 <- data$value[1:(n/3)]
-part2 <- data$value[(n/3 + 1):n]
-part3 <- data$value[(n/3 + 2):n]
+cut <- floor(n/3)
+part1 <- data$value[1:cut]
+part2 <- data$value[(cut+1):(2*cut)]
+part3 <- data$value[(2*cut+1):n]
 
 # mean
 mean(part1); mean(part2); mean(part3)
@@ -255,7 +256,7 @@ results <- data.frame(
 for (p in p_vals) {
   for (q in q_vals) {
     try({
-      model <- Arima(train, order = c(p, d, q), lambda = lambda)
+      model <- Arima(train, order = c(p, d, q), lambda = lambda, xreg = xreg_train)
       res <- residuals(model)
       shapiro <- shapiro.test(res)
       
@@ -278,7 +279,7 @@ for (p in p_vals) {
         try({
           model <- Arima(train, order = c(p, d, q),
                          seasonal = list(order = c(P, D, Q), period = seasonal_period),
-                         xreg = xreg_train, lambda = lambda)
+                         lambda = lambda)
           res <- residuals(model)
           shapiro <- shapiro.test(res)
           

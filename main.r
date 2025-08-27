@@ -77,7 +77,7 @@ test <- window(ts_data, start = c(2023, 9))
 # based on the data time dependence.
 pacf(data$value, main = "Partial Autocorrelation") # suggests AR(1) or AR(2) will be good
 
-ar_model <- Arima(train, order = c(1,0,0), lambda = lambda)
+ar_model <- Arima(train, order = c(2,0,0), lambda = lambda)
 
 ar_forecast <- forecast(ar_model, h = 6)
 plot(ar_forecast)
@@ -89,11 +89,9 @@ plot(ar_forecast)
 # Create cos regressor matrix
 cos_t <- cos(2 * pi * (1:length(data$value))/12)
 xreg_train <- matrix(cos_t[1:length(train)], ncol = 1)
-xreg_test  <- matrix(cos_t[(length(train) + 1):length(data$value)], ncol = 1)
-
 
 # Fit ARMA with cosine regressor
-arma_model <- Arima(train, order = c(1,0,2), xreg = xreg_train, lambda=lambda)
+arma_model <- Arima(train, order = c(4,0,4), xreg = xreg_train, lambda=lambda)
 
 # Forecast using new regressor values
 arma_forecast <- forecast(arma_model, h = 6, xreg = xreg_test)
@@ -101,7 +99,7 @@ plot(arma_forecast)
 
 
 # 6. Estimate a SARMA model.
-sarma_model <- Arima(train, order = c(1,0,2),
+sarma_model <- Arima(train, order = c(2,0,2),
                      seasonal = list(order = c(1,0,0), period = 12), lambda = lambda)
 
 sarma_forecast <- forecast(sarma_model, h = 6)
@@ -211,84 +209,35 @@ mean(res_sarma)
 shapiro.test(res_ar)
 shapiro.test(res_arma)
 shapiro.test(res_sarma)
+#--------------------------------------------------------
 
-arma_model <- Arima(train, order = c(1,0,2), lambda=lambda, xreg = xreg_train)
+sarma_model <- Arima(train, order = c(2,0,2),
+                     seasonal = list(order = c(1,0,0), period = 12), lambda = lambda)
 
-res_arma <- residuals(arma_model)
+res_sarma <- residuals(sarma_model)
 
-shapiro.test(res_arma)
+acf(res_sarma)
+shapiro.test(res_sarma)
 
 
-library(forecast)
+# ar (2,0,0)
+# arma (4,0,4) high orders hmmm
+# sarma (1,0,4), (2,0,2), (2,0,3), (2,0,4), (3,0,2), (3,0,3)
 
-# Initialize vectors of orders to test
-p_vals <- 0:3
-d <- 0
-q_vals <- 0:3
+ar_model <- Arima(train, order = c(2,0,0), lambda = lambda)
 
-P_vals <- 0:1
-D <- 0
-Q_vals <- 0:1
-seasonal_period <- 12
+arma_model <- Arima(train, order = c(4,0,4), xreg = xreg_train, lambda=lambda)
 
-# Prepare result storage
-results <- data.frame(
-  model_type = character(),
-  p = integer(),
-  d = integer(),
-  q = integer(),
-  P = integer(),
-  D = integer(),
-  Q = integer(),
-  W_statistic = numeric(),
-  p_value = numeric(),
-  stringsAsFactors = FALSE
+sarma_model <- Arima(train, order = c(2,0,2),
+                     seasonal = list(order = c(1,0,0), period = 12), lambda = lambda)
+
+# Compare AIC and BIC
+model_comparison <- data.frame(
+  Model = c("AR", "ARMA", "SARMA"),
+  AIC = c(AIC(ar_model), AIC(arma_model), AIC(sarma_model)),
+  BIC = c(BIC(ar_model), BIC(arma_model), BIC(sarma_model))
 )
 
-# Loop over ARMA (non-seasonal) models
-for (p in p_vals) {
-  for (q in q_vals) {
-    try({
-      model <- Arima(train, order = c(p, d, q), lambda = lambda, xreg = xreg_train)
-      res <- residuals(model)
-      shapiro <- shapiro.test(res)
-      
-      results <- rbind(results, data.frame(
-        model_type = "ARMA",
-        p = p, d = d, q = q,
-        P = NA, D = NA, Q = NA,
-        W_statistic = shapiro$statistic,
-        p_value = shapiro$p.value
-      ))
-    }, silent = TRUE)
-  }
-}
-# 102 100 is best
-# Loop over SARMA (seasonal) models
-for (p in p_vals) {
-  for (q in q_vals) {
-    for (P in P_vals) {
-      for (Q in Q_vals) {
-        try({
-          model <- Arima(train, order = c(p, d, q),
-                         seasonal = list(order = c(P, D, Q), period = seasonal_period),
-                         lambda = lambda)
-          res <- residuals(model)
-          shapiro <- shapiro.test(res)
-          
-          results <- rbind(results, data.frame(
-            model_type = "SARMA",
-            p = p, d = d, q = q,
-            P = P, D = D, Q = Q,
-            W_statistic = shapiro$statistic,
-            p_value = shapiro$p.value
-          ))
-        }, silent = TRUE)
-      }
-    }
-  }
-}
+print(model_comparison) # AR has lowest BIC, SARMA has lowest AIC
 
-# Sort results by highest p-value (most normal residuals)
-results <- results[order(-results$p_value), ]
-print(results)
+
